@@ -47,11 +47,6 @@ class MyStreamListener(tweepy.StreamListener):
             
         retweet_count = status.retweet_count
         favorite_count = status.favorite_count
-
-        cur = conn.cursor()
-        cur.execute("CREATE TABLE {} ({})".format(settings.TABLE_NAME, settings.TABLE_ATTRIBUTES))
-        conn.commit()
-        cur.close()
         
         # Store all data in Heroku PostgreSQL
         cur = conn.cursor()
@@ -67,7 +62,7 @@ class MyStreamListener(tweepy.StreamListener):
             SELECT id_str 
             FROM {0}
             ORDER BY created_at asc
-            LIMIT 200) AND (SELECT COUNT(*) FROM Facebook) > 9600;
+            LIMIT 200) AND (SELECT COUNT(*) FROM {0}) > 9600;
         '''.format(settings.TABLE_NAME)
         
         cur.execute(delete_query)
