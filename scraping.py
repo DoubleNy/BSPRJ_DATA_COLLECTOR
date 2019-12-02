@@ -49,14 +49,8 @@ class MyStreamListener(tweepy.StreamListener):
         favorite_count = status.favorite_count
 
         cur = conn.cursor()
-        cur.execute("""
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_name = '{0}'
-            """.format(settings.TABLE_NAME))
-        if cur.fetchone()[0] != 1:
-            cur.execute("CREATE TABLE {} ({})".format(settings.TABLE_NAME, settings.TABLE_ATTRIBUTES))
-            conn.commit()
+        cur.execute("CREATE TABLE {} ({})".format(settings.TABLE_NAME, settings.TABLE_ATTRIBUTES))
+        conn.commit()
         cur.close()
         
         # Store all data in Heroku PostgreSQL
