@@ -4,7 +4,6 @@ import credentials # Import api/access_token keys from credentials.py
 import settings # Import related setting constants from settings.py 
 import os
 import psycopg2
-from pymongo import MongoClient
 import re
 import time
 from opencage.geocoder import OpenCageGeocode
