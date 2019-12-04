@@ -112,10 +112,34 @@ class MyStreamListener(tweepy.StreamListener):
         Extract info from tweets
         '''
         dataToInsert = self.get_data(data)
+        #delete data from postgress
+        cur = conn.cursor()
+        delete_query = '''
+                DELETE FROM {0}
+                WHERE id_str IN (
+                    SELECT id_str 
+                    FROM {0}
+                    ORDER BY created_at asc
+                    LIMIT 200) AND (SELECT COUNT(*) FROM {0}) > 9600;
+                '''.format(settings.TABLE_NAME)
+
+        cur.execute(delete_query)
+        conn.commit()
+
+        #insert into postgress database
         if(time.time() - self.time > 10 and dataToInsert is not None):
-            _id = collection.insert_one(dataToInsert)
+            sql = "INSERT INTO {} (id_str, created_at, text, polarity, subjectivity, user_created_at, user_location, user_description, user_followers_count, longitude, latitude, retweet_count, favorite_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
+                settings.TABLE_NAME)
+            val = (dataToInsert["id_str"], dataToInsert["created_at"], dataToInsert["text"], dataToInsert["polarity"],
+                   dataToInsert["subjectivity"], dataToInsert["user_created_at"], dataToInsert["user_location"],
+                   dataToInsert["user_description"], dataToInsert["user_followers_count"], dataToInsert["longitude"],
+                   dataToInsert["latitude"], dataToInsert["retweet_count"], dataToInsert["favorite_count"])
+            cur.execute(sql, val)
+            conn.commit()
             self.time = time.time()
-            print(_id.inserted_id)
+            print(dataToInsert["id_str"])
+
+        cur.close()
 
     def on_error(self, status_code):
         '''
@@ -141,12 +165,15 @@ def deEmojify(text):
         return None
 
 
-connection = MongoClient("mongodb+srv://cninicu:1997DoubleNy$@cluster0-hoo2q.mongodb.net/test?retryWrites=true&w=majority",connectTimeoutMS=30000, socketTimeoutMS=None, socketKeepAlive=True, connect=False, maxPoolsize=1)
-database = connection["TWITTER_DB"]
-collection = database["USER_DATA"]
+# connection = MongoClient("mongodb+srv://cninicu:1997DoubleNy$@cluster0-hoo2q.mongodb.net/test?retryWrites=true&w=majority",connectTimeoutMS=30000, socketTimeoutMS=None, socketKeepAlive=True, connect=False, maxPoolsize=1)
+# database = connection["TWITTER_DB"]
+# collection = database["USER_DATA"]
 
-print(connection.mflix)
+# print(connection.mflix)
+DATABASE_URL = settings.DATABASE_URL
 
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+cur = conn.cursor()
 
 auth  = tweepy.OAuthHandler(credentials.API_KEY, credentials.API_SECRET_KEY)
 auth.set_access_token(credentials.ACCESS_TOEKN, credentials.ACCESS_TOKEN_SECRET)
@@ -158,3 +185,4 @@ myStream.filter(languages=["en"], track = settings.TRACK_WORDS, stall_warnings=T
 # Close the MySQL connection as it finished
 # However, this won't be reached as the stream listener won't stop automatically
 # Press STOP button to finish the process.
+conn.close()
