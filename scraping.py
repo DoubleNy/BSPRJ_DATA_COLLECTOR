@@ -170,7 +170,8 @@ def deEmojify(text):
 # collection = database["USER_DATA"]
 
 # print(connection.mflix)
-DATABASE_URL = settings.DATABASE_URL
+# DATABASE_URL = settings.DATABASE_URL
+DATABASE_URL = os.environ['DATABASE_URL']
 
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cur = conn.cursor()
