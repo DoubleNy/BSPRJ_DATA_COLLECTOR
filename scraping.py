@@ -24,8 +24,8 @@ def analyze(tweet_text):
 
 class Geocoder:
     def __init__(self):
-        # self.geocoder = OpenCageGeocode("91352aa63f2e42e9949134f0dd58ec76")
-        self.geocoder = OpenCageGeocode("2d711eaaa00a4b22bf81fe6cab0be109");
+        self.geocoder = OpenCageGeocode("91352aa63f2e42e9949134f0dd58ec76")
+        # self.geocoder = OpenCageGeocode("2d711eaaa00a4b22bf81fe6cab0be109");
     def forward_geocode(self, location):
         results = self.geocoder.geocode(location)
         if len(results) > 0:
@@ -79,32 +79,33 @@ class MyStreamListener(tweepy.StreamListener):
         if data.coordinates:
             longitude = data.coordinates['coordinates'][0]
             latitude = data.coordinates['coordinates'][1]
-        elif data.place is not None:
-            latitude, longitude = self.geocoder.forward_geocode(
-                data.place.full_name + "," + data.place.country
-            )
-        elif data.user.location is not None:
-            latitude, longitude = self.geocoder.forward_geocode(
-                data.user.location
-            )
-            if latitude is not None and longitude is not None:
-                return {
-                    "id_str": id_str,
-                    "created_at": created_at,
-                    "text": text,
-                    "polarity": polarity,
-                    "subjectivity": subjectivity,
-                    "user_created_at": user_created_at,
-                    "user_location": user_location,
-                    "user_description": user_description,
-                    "user_followers_count": user_followers_count,
-                    "longitude": longitude,
-                    "latitude": latitude,
-                    "retweet_count": retweet_count,
-                    "favorite_count": favorite_count
-                }
-            return None
-        return None
+        # elif data.place is not None:
+        #     latitude, longitude = self.geocoder.forward_geocode(
+        #         data.place.full_name + "," + data.place.country
+        #     )
+        # elif data.user.location is not None:
+        #     latitude, longitude = self.geocoder.forward_geocode(
+        #         data.user.location
+        #     )
+        #     if latitude is not None and longitude is not None:
+        return {
+            "id_str": id_str,
+            "created_at": created_at,
+            "text": text,
+            "polarity": polarity,
+            "subjectivity": subjectivity,
+            "user_created_at": user_created_at,
+            "user_location": user_location,
+            "user_description": user_description,
+            "user_followers_count": user_followers_count,
+            "longitude": longitude,
+            "latitude": latitude,
+            "retweet_count": retweet_count,
+            "favorite_count": favorite_count,
+            "kmatch": match
+        }
+        # return None
+        # return None
 
     def on_status(self, data):
         '''
@@ -126,13 +127,13 @@ class MyStreamListener(tweepy.StreamListener):
         conn.commit()
 
         #insert into postgress database
-        if(time.time() - self.time > 10 and dataToInsert is not None):
-            sql = "INSERT INTO {} (id_str, created_at, text, polarity, subjectivity, user_created_at, user_location, user_description, user_followers_count, longitude, latitude, retweet_count, favorite_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
+        if(dataToInsert is not None):
+            sql = "INSERT INTO {} (id_str, created_at, text, polarity, subjectivity, user_created_at, user_location, user_description, user_followers_count, longitude, latitude, retweet_count, favorite_count, kmatch) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
                 settings.TABLE_NAME)
             val = (dataToInsert["id_str"], dataToInsert["created_at"], dataToInsert["text"], dataToInsert["polarity"],
                    dataToInsert["subjectivity"], dataToInsert["user_created_at"], dataToInsert["user_location"],
                    dataToInsert["user_description"], dataToInsert["user_followers_count"], dataToInsert["longitude"],
-                   dataToInsert["latitude"], dataToInsert["retweet_count"], dataToInsert["favorite_count"])
+                   dataToInsert["latitude"], dataToInsert["retweet_count"], dataToInsert["favorite_count"], dataToInsert["kmatch"])
             cur.execute(sql, val)
             conn.commit()
             self.time = time.time()
@@ -169,19 +170,28 @@ def deEmojify(text):
 # collection = database["USER_DATA"]
 
 # print(connection.mflix)
-# DATABASE_URL = settings.DATABASE_URL
-DATABASE_URL = os.environ['DATABASE_URL']
+DATABASE_URL = settings.DATABASE_URL
+# DATABASE_URL = os.environ['DATABASE_URL']
 
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cur = conn.cursor()
 
-auth  = tweepy.OAuthHandler(credentials.API_KEY, credentials.API_SECRET_KEY)
-auth.set_access_token(credentials.ACCESS_TOEKN, credentials.ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth)
+while True:
+    print("Continue")
+    try:
+        auth = tweepy.OAuthHandler(credentials.API_KEY, credentials.API_SECRET_KEY)
+        auth.set_access_token(credentials.ACCESS_TOEKN, credentials.ACCESS_TOKEN_SECRET)
+        api = tweepy.API(auth)
 
-myStreamListener = MyStreamListener()
-myStream = tweepy.Stream(auth = api.auth, listener = myStreamListener, tweet_mode='extended')
-myStream.filter(languages=["en"], track = settings.TRACK_WORDS, stall_warnings=True)
+        myStreamListener = MyStreamListener()
+        myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener, tweet_mode='extended')
+        myStream.filter(languages=["en"], track = settings.TRACK_WORDS, stall_warnings=True)
+    except Exception as ex:
+        print(ex)
+    finally:
+        print("Error")
+
+
 # Close the MySQL connection as it finished
 # However, this won't be reached as the stream listener won't stop automatically
 # Press STOP button to finish the process.
