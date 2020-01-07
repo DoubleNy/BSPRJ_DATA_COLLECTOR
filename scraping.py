@@ -25,8 +25,8 @@ def analyze(tweet_text):
 
 class Geocoder:
     def __init__(self):
-        self.geocoder = OpenCageGeocode("91352aa63f2e42e9949134f0dd58ec76")
-        # self.geocoder = OpenCageGeocode("2d711eaaa00a4b22bf81fe6cab0be109");
+        # self.geocoder = OpenCageGeocode("91352aa63f2e42e9949134f0dd58ec76")
+        self.geocoder = OpenCageGeocode("2d711eaaa00a4b22bf81fe6cab0be109");
     def forward_geocode(self, location):
         results = self.geocoder.geocode(location)
         if len(results) > 0:
