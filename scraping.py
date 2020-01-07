@@ -167,8 +167,8 @@ def deEmojify(text):
 
 
 # print(connection.mflix)
-# DATABASE_URL = settings.BETA_DATABASE_URL
-DATABASE_URL = settings.DEV_DATABASE_URL
+DATABASE_URL = settings.BETA_DATABASE_URL
+# DATABASE_URL = settings.DEV_DATABASE_URL
 
 # DATABASE_URL = os.environ['DATABASE_URL']
 
