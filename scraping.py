@@ -21,7 +21,7 @@ def analyze(tweet_text):
             matching = key
             matchingCnt = tweet_text.count(key)
 
-    return matching
+    return matching.capitalize()
 
 class Geocoder:
     def __init__(self):
@@ -167,10 +167,12 @@ def deEmojify(text):
 
 
 # print(connection.mflix)
-BETA_DATABASE_URL = settings.BETA_DATABASE_URL
+# DATABASE_URL = settings.BETA_DATABASE_URL
+DATABASE_URL = settings.DEV_DATABASE_URL
+
 # DATABASE_URL = os.environ['DATABASE_URL']
 
-conn = psycopg2.connect(BETA_DATABASE_URL, sslmode='require')
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 cur = conn.cursor()
 
 while True:
