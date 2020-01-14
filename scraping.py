@@ -1,8 +1,8 @@
 # This is Main function.
 # Extracting streaming data from Twitter, pre-processing, and loading into Postgre
 
-import credentials # Import api/access_token keys from credentials.py
-import settings # Import related setting constants from settings.py 
+import credentials  # Import api/access_token keys from credentials.py
+import settings  # Import related setting constants from settings.py
 import psycopg2
 import re
 import time
@@ -11,6 +11,9 @@ from opencage.geocoder import RateLimitExceededError
 import tweepy
 import pandas as pd
 from textblob import TextBlob
+
+selectedOpencageApiKey = 1
+
 
 def analyze(tweet_text):
     matching = ''
@@ -23,12 +26,18 @@ def analyze(tweet_text):
 
     return matching.capitalize()
 
+
 class Geocoder:
-    def __init__(self):
-        # self.geocoder = OpenCageGeocode("91352aa63f2e42e9949134f0dd58ec76")
-        self.geocoder = OpenCageGeocode("2d711eaaa00a4b22bf81fe6cab0be109");
+    # def __init__(self):
+    #     global selectedOpencageApiKey
+    #     self.geocoder = settings.OpencageApiKeys[selectedOpencageApiKey]
+
     def forward_geocode(self, location):
-        results = self.geocoder.geocode(location)
+        global selectedOpencageApiKey
+        print(selectedOpencageApiKey)
+        geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
+        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 3;
+        results = geocoder.geocode(location)
         if len(results) > 0:
             return results[0]['geometry']['lat'], results[0]['geometry']['lng']
         return None, None
@@ -45,7 +54,7 @@ class MyStreamListener(tweepy.StreamListener):
         super().__init__()
         self.time = time.time()
         self.geocoder = Geocoder()
-
+        self.lastTime = time.time()
 
     def get_data(self, data):
         if data.id_str is None:
@@ -112,8 +121,14 @@ class MyStreamListener(tweepy.StreamListener):
         '''
         Extract info from tweets
         '''
+        currTime = time.time()
+
+        # print(currTime - self.lastTime)
+        if currTime - self.lastTime < 1:
+            return
+        self.lastTime = currTime
         dataToInsert = self.get_data(data)
-        #delete data from postgress
+        # delete data from postgress
         cur = conn.cursor()
         # delete_query = '''
         #         DELETE FROM {0}
@@ -128,14 +143,15 @@ class MyStreamListener(tweepy.StreamListener):
         # conn.commit()
 
         # print(dataToInsert["kmatch"])
-        #insert into postgress database
-        if(dataToInsert is not None):
+        # insert into postgress database
+        if (dataToInsert is not None):
             sql = "INSERT INTO {} (id_str, created_at, text, polarity, subjectivity, user_created_at, user_location, user_description, user_followers_count, longitude, latitude, retweet_count, favorite_count, kmatch) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
                 settings.TABLE_NAME)
             val = (dataToInsert["id_str"], dataToInsert["created_at"], dataToInsert["text"], dataToInsert["polarity"],
                    dataToInsert["subjectivity"], dataToInsert["user_created_at"], dataToInsert["user_location"],
                    dataToInsert["user_description"], dataToInsert["user_followers_count"], dataToInsert["longitude"],
-                   dataToInsert["latitude"], dataToInsert["retweet_count"], dataToInsert["favorite_count"], dataToInsert["kmatch"])
+                   dataToInsert["latitude"], dataToInsert["retweet_count"], dataToInsert["favorite_count"],
+                   dataToInsert["kmatch"])
             cur.execute(sql, val)
             conn.commit()
             self.time = time.time()
@@ -150,12 +166,15 @@ class MyStreamListener(tweepy.StreamListener):
             # return False to disconnect the stream
             return False
 
-def clean_tweet(self, tweet): 
+
+def clean_tweet(self, tweet):
     ''' 
     Use sumple regex statemnents to clean tweet text by removing links and special characters
     '''
     return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) \
-                                |(\w+:\/\/\S+)", " ", tweet).split()) 
+                                |(\w+:\/\/\S+)", " ", tweet).split())
+
+
 def deEmojify(text):
     '''
     Strip all non-ASCII characters to remove emoji characters
@@ -183,11 +202,14 @@ while True:
 
         myStreamListener = MyStreamListener()
         myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener, tweet_mode='extended')
-        myStream.filter(languages=["en"], track = settings.TRACK_WORDS, stall_warnings=True)
+        myStream.filter(languages=["en"], track=settings.TRACK_WORDS, stall_warnings=True)
         print("Ok")
     except Exception as ex:
         print("######Error######\n")
         print(ex)
+        if (ex is RateLimitExceededError):
+            selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 3
+
     finally:
         print("######Continue######\n")
 
