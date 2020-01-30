@@ -12,7 +12,7 @@ import tweepy
 import pandas as pd
 from textblob import TextBlob
 
-selectedOpencageApiKey = 1
+selectedOpencageApiKey = 0
 
 
 def analyze(tweet_text):
@@ -34,9 +34,9 @@ class Geocoder:
 
     def forward_geocode(self, location):
         global selectedOpencageApiKey
-        print(selectedOpencageApiKey)
+        # print(selectedOpencageApiKey)
         geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
-        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 3;
+        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
         results = geocoder.geocode(location)
         if len(results) > 0:
             return results[0]['geometry']['lat'], results[0]['geometry']['lng']
@@ -60,16 +60,17 @@ class MyStreamListener(tweepy.StreamListener):
         if data.id_str is None:
             return None
 
-        if data.retweeted and 'RT @' not in data.text:
+        if data.retweeted or 'RT @' in data.text:
             return None
 
         # Extract attributes from each tweet
         id_str = data.id_str
         created_at = data.created_at
         text = deEmojify(data.text)
-        # if data['extended_tweet']:
-        #      print(data['extended_tweet'])
-        #      text = deEmojify(data['extended_tweet'].full_text)
+
+        if data.truncated:
+             text = deEmojify(data.extended_tweet['full_text'])[:255]
+
         sentiment = TextBlob(text).sentiment
         polarity = sentiment.polarity
         subjectivity = sentiment.subjectivity
@@ -122,29 +123,16 @@ class MyStreamListener(tweepy.StreamListener):
         Extract info from tweets
         '''
         currTime = time.time()
-
-        # print(currTime - self.lastTime)
-        if currTime - self.lastTime < 1:
+        if(currTime - self.lastTime < 2): #2 seconds interval
             return
+
         self.lastTime = currTime
         dataToInsert = self.get_data(data)
-        # delete data from postgress
-        cur = conn.cursor()
-        # delete_query = '''
-        #         DELETE FROM {0}
-        #         WHERE id_str IN (
-        #             SELECT id_str
-        #             FROM {0}
-        #             ORDER BY created_at asc
-        #             LIMIT 200) AND (SELECT COUNT(*) FROM {0}) > 9600;
-        #         '''.format(settings.TABLE_NAME)
-        #
-        # cur.execute(delete_query)
-        # conn.commit()
 
-        # print(dataToInsert["kmatch"])
         # insert into postgress database
         if (dataToInsert is not None):
+            cur = conn.cursor()
+            # print(dataToInsert["text"])
             sql = "INSERT INTO {} (id_str, created_at, text, polarity, subjectivity, user_created_at, user_location, user_description, user_followers_count, longitude, latitude, retweet_count, favorite_count, kmatch) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
                 settings.TABLE_NAME)
             val = (dataToInsert["id_str"], dataToInsert["created_at"], dataToInsert["text"], dataToInsert["polarity"],
@@ -155,8 +143,8 @@ class MyStreamListener(tweepy.StreamListener):
             cur.execute(sql, val)
             conn.commit()
             self.time = time.time()
-            print(dataToInsert["id_str"])
-        cur.close()
+            print(dataToInsert["id_str"], dataToInsert["created_at"])
+            cur.close()
 
     def on_error(self, status_code):
         '''
@@ -164,6 +152,8 @@ class MyStreamListener(tweepy.StreamListener):
         '''
         if status_code == 420:
             # return False to disconnect the stream
+            print("420 error")
+            time.sleep(120)
             return False
 
 
@@ -207,8 +197,8 @@ while True:
     except Exception as ex:
         print("######Error######\n")
         print(ex)
-        if (ex is RateLimitExceededError):
-            selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 3
+        # if (ex is RateLimitExceededError):
+        #     selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 5
 
     finally:
         print("######Continue######\n")
