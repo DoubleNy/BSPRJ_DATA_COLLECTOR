@@ -1,7 +1,3 @@
-# TRACK_WORDS = ['trump', 'elon musk', 'react', 'obama']
-
-#
-
 TRACK_WORDS = [
 "Acute myeloid leukaemia",
 "Acute pancreatitis",
@@ -288,7 +284,6 @@ TRACK_WORDS = [
 "Womb (uterus) cancer",
 "Yellow fever",
 ]
-#
 
 TABLE_NAME = "\"DATA_COLLECTION\""
 TABLE_ATTRIBUTES = "id_str varchar(255), created_at date, text varchar(255), \

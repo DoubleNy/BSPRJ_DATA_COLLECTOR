@@ -1,6 +1,3 @@
-# This is Main function.
-# Extracting streaming data from Twitter, pre-processing, and loading into Postgre
-
 import credentials  # Import api/access_token keys from credentials.py
 import settings  # Import related setting constants from settings.py
 import psycopg2
@@ -45,11 +42,6 @@ class Geocoder:
 
 # Override tweepy.StreamListener to add logic to on_status
 class MyStreamListener(tweepy.StreamListener):
-    '''
-    Tweets are known as “status updates”. So the Status class in tweepy has properties describing the tweet.
-    https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object.html
-    '''
-
     def __init__(self):
         super().__init__()
         self.time = time.time()
@@ -123,7 +115,7 @@ class MyStreamListener(tweepy.StreamListener):
         Extract info from tweets
         '''
         currTime = time.time()
-        if(currTime - self.lastTime < 2): #2 seconds interval
+        if(currTime - self.lastTime < 1): #2 seconds interval
             return
 
         self.lastTime = currTime
@@ -148,7 +140,7 @@ class MyStreamListener(tweepy.StreamListener):
 
     def on_error(self, status_code):
         '''
-        Since Twitter API has rate limits, stop srcraping data as it exceed to the thresold.
+        Since Twitter API has rate limits, stop srcraping data as it exceed the limit.
         '''
         if status_code == 420:
             # return False to disconnect the stream
@@ -159,7 +151,7 @@ class MyStreamListener(tweepy.StreamListener):
 
 def clean_tweet(self, tweet):
     ''' 
-    Use sumple regex statemnents to clean tweet text by removing links and special characters
+    remove links and special characters from tweets
     '''
     return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) \
                                 |(\w+:\/\/\S+)", " ", tweet).split())
@@ -178,7 +170,6 @@ def deEmojify(text):
 # print(connection.mflix)
 DATABASE_URL = settings.BETA_DATABASE_URL
 # DATABASE_URL = settings.DEV_DATABASE_URL
-
 # DATABASE_URL = os.environ['DATABASE_URL']
 
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -202,8 +193,3 @@ while True:
 
     finally:
         print("######Continue######\n")
-
-# Close the MySQL connection as it finished
-# However, this won't be reached as the stream listener won't stop automatically
-# Press STOP button to finish the process.
-conn.close()
