@@ -38,7 +38,12 @@ class Geocoder:
         if len(results) > 0:
             return results[0]['geometry']['lat'], results[0]['geometry']['lng']
         return None, None
-
+    def reverse_geocode(self, lat, long):
+        global selectedOpencageApiKey
+        geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
+        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
+        result = geocoder.reverse_geocode(lat, long)
+        return result[0]['components']['country']
 
 # Override tweepy.StreamListener to add logic to on_status
 class MyStreamListener(tweepy.StreamListener):
@@ -92,6 +97,10 @@ class MyStreamListener(tweepy.StreamListener):
                 data.user.location
             )
         if latitude is not None and longitude is not None:
+
+            user_real_location = self.geocoder.reverse_geocode(latitude, longitude)
+            print(user_real_location)
+
             return {
                 "id_str": id_str,
                 "created_at": created_at,
@@ -99,7 +108,7 @@ class MyStreamListener(tweepy.StreamListener):
                 "polarity": polarity,
                 "subjectivity": subjectivity,
                 "user_created_at": user_created_at,
-                "user_location": user_location,
+                "user_location": user_real_location,
                 "user_description": user_description,
                 "user_followers_count": user_followers_count,
                 "longitude": longitude,
