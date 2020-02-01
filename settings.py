@@ -283,6 +283,8 @@ TRACK_WORDS = [
 "Wilms’ tumour",
 "Womb (uterus) cancer",
 "Yellow fever",
+"Virus",
+"Corona virus"
 ]
 
 TABLE_NAME = "\"DATA_COLLECTION\""
