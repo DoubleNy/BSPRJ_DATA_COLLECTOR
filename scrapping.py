@@ -25,24 +25,24 @@ def analyze(tweet_text):
 
 
 class Geocoder:
-    # def __init__(self):
-    #     global selectedOpencageApiKey
-    #     self.geocoder = settings.OpencageApiKeys[selectedOpencageApiKey]
+    def __init__(self):
+        # global selectedOpencageApiKey
+        self.geocoder = settings.OpencageApiKeys[0]
 
     def forward_geocode(self, location):
         global selectedOpencageApiKey
         # print(selectedOpencageApiKey)
-        geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
-        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
-        results = geocoder.geocode(location)
+        # geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
+        # selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
+        results = self.geocoder.geocode(location)
         if len(results) > 0:
             return results[0]['geometry']['lat'], results[0]['geometry']['lng']
         return None, None
     def reverse_geocode(self, lat, long):
-        global selectedOpencageApiKey
-        geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
-        selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
-        result = geocoder.reverse_geocode(lat, long)
+        # global selectedOpencageApiKey
+        # geocoder = OpenCageGeocode(settings.OpencageApiKeys[selectedOpencageApiKey])
+        # selectedOpencageApiKey = (selectedOpencageApiKey + 1) % 6;
+        result = self.geocoder.reverse_geocode(lat, long)
         return result[0]['components']['country']
 
 # Override tweepy.StreamListener to add logic to on_status
@@ -124,7 +124,7 @@ class MyStreamListener(tweepy.StreamListener):
         Extract info from tweets
         '''
         currTime = time.time()
-        if(currTime - self.lastTime < 1): #2 seconds interval
+        if(currTime - self.lastTime < 10): #2 seconds interval
             return
 
         self.lastTime = currTime

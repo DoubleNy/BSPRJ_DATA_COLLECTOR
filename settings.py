@@ -295,11 +295,11 @@ TABLE_ATTRIBUTES = "id_str varchar(255), created_at date, text varchar(255), \
 
 OpencageApiKeys = [
     "2d711eaaa00a4b22bf81fe6cab0be109",
-    "91352aa63f2e42e9949134f0dd58ec76",
-    "b0a505b622c84489b4cb3fcf6a09b4cb",
-    "787dac71f2e74929a77dad2f86a208b0",
-    "ed59a026623e4cbfb613966c842feff9",
-    "db3ec4cfc6dc46d2907100a0574320b5",
+    # "91352aa63f2e42e9949134f0dd58ec76",
+    # "b0a505b622c84489b4cb3fcf6a09b4cb",
+    # "787dac71f2e74929a77dad2f86a208b0",
+    # "ed59a026623e4cbfb613966c842feff9",
+    # "db3ec4cfc6dc46d2907100a0574320b5",
 ]
 
 DEV_DATABASE_URL = "postgres://gykdutoutwmbmu:58fe951784b1417c80fd04e1adf0e21cfef7d3c5c954cba309e5f241d94e0ba2@ec2-46-137-113-157.eu-west-1.compute.amazonaws.com:5432/dc7gsfpk9oef97"
