@@ -27,7 +27,7 @@ def analyze(tweet_text):
 class Geocoder:
     def __init__(self):
         # global selectedOpencageApiKey
-        self.geocoder = settings.OpencageApiKeys[0]
+        self.geocoder = OpenCageGeocode(settings.OpencageApiKeys[0])
 
     def forward_geocode(self, location):
         global selectedOpencageApiKey
